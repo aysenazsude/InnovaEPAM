@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  /* EPAM Brand Colours */
+  --color-brand-50: #e6f2fa;
+  --color-brand-100: #cce5f5;
+  --color-brand-200: #99cbeb;
+  --color-brand-300: #66b1e1;
+  --color-brand-400: #3397d7;
+  --color-brand-500: #0077cc;
+  --color-brand-600: #005fa3;
+  --color-brand-700: #00487a;
+  --color-brand-800: #003052;
+  --color-brand-900: #001829;
+
+  /* EPAM Accent (orange) */
+  --color-accent-50: #fff3e6;
+  --color-accent-100: #ffe7cc;
+  --color-accent-200: #ffcf99;
+  --color-accent-300: #ffb766;
+  --color-accent-400: #ff9f33;
+  --color-accent-500: #ff6600;
+  --color-accent-600: #cc5200;
+  --color-accent-700: #993d00;
+  --color-accent-800: #662900;
+  --color-accent-900: #331400;
+
+  /* Neutrals */
+  --color-neutral-50: #f8f9fa;
+  --color-neutral-100: #f1f3f5;
+  --color-neutral-200: #e9ecef;
+  --color-neutral-300: #dee2e6;
+  --color-neutral-400: #ced4da;
+  --color-neutral-500: #adb5bd;
+  --color-neutral-600: #868e96;
+  --color-neutral-700: #495057;
+  --color-neutral-800: #343a40;
+  --color-neutral-900: #212529;
+
+  /* shadcn/ui semantic aliases */
+  --color-background: #ffffff;
+  --color-foreground: #212529;
+  --color-primary: var(--color-brand-500);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--color-neutral-100);
+  --color-secondary-foreground: var(--color-neutral-900);
+  --color-muted: var(--color-neutral-100);
+  --color-muted-foreground: var(--color-neutral-600);
+  --color-accent: var(--color-accent-500);
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-border: var(--color-neutral-200);
+  --color-input: var(--color-neutral-200);
+  --color-ring: var(--color-brand-500);
+
+  /* Radius */
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  /* Respect reduced-motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
