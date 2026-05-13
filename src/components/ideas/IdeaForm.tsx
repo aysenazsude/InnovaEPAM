@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,12 +8,17 @@ import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { submitIdea, SubmitIdeaResult } from '@/lib/actions/ideas';
-import { CATEGORIES, ALLOWED_MIME_TYPES } from '@/lib/constants';
+import { CATEGORIES, ALLOWED_MIME_TYPES, CategorySlug } from '@/lib/constants';
+import { CATEGORY_FIELDS } from '@/lib/ideas/categoryFieldConfig';
+import { CategoryFields } from '@/components/ideas/CategoryFields';
 
 const initialState: SubmitIdeaResult | null = null;
 
 export function IdeaForm() {
   const [state, formAction, pending] = useActionState(submitIdea, initialState);
+  const [selectedCategory, setSelectedCategory] = useState<CategorySlug | undefined>(undefined);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
 
   return (
     <form action={formAction} className="space-y-6">
@@ -24,6 +29,8 @@ export function IdeaForm() {
           name="title"
           maxLength={100}
           required
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           aria-describedby={state?.errors?.title ? 'title-error' : undefined}
         />
         {state?.errors?.title && (
@@ -41,6 +48,8 @@ export function IdeaForm() {
           rows={6}
           maxLength={2000}
           required
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
           aria-describedby={state?.errors?.description ? 'description-error' : undefined}
         />
         {state?.errors?.description && (
@@ -52,7 +61,11 @@ export function IdeaForm() {
 
       <div className="space-y-1">
         <Label htmlFor="category">Category</Label>
-        <Select name="category" required>
+        <Select
+          name="category"
+          required
+          onValueChange={(value) => setSelectedCategory(value as CategorySlug)}
+        >
           <SelectTrigger id="category">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
@@ -68,6 +81,54 @@ export function IdeaForm() {
           <p className="text-sm text-red-600">{state.errors.category}</p>
         )}
       </div>
+
+      {/* Dynamic category-specific fields (JS-enhanced) */}
+      <CategoryFields category={selectedCategory} errors={state?.errors ?? undefined} />
+
+      {/* Noscript fallback: renders all category fieldsets when JS is unavailable */}
+      <noscript>
+        {CATEGORIES.filter((cat) => CATEGORY_FIELDS[cat.slug].length > 0).map((cat) => (
+          <fieldset key={cat.slug} className="border border-neutral-200 rounded-md p-4 space-y-4">
+            <legend className="text-sm font-medium px-1">{cat.displayName} Fields</legend>
+            {CATEGORY_FIELDS[cat.slug].map((field) => {
+              const fieldId = `noscript-field-${field.name}`;
+              return (
+                <div key={field.name} className="space-y-1">
+                  <Label htmlFor={fieldId}>{field.label}</Label>
+                  {field.type === 'select' && field.options ? (
+                    <select id={fieldId} name={field.name} className="w-full border rounded px-2 py-1 text-sm">
+                      <option value="">— Select —</option>
+                      {field.options.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
+                  ) : field.type === 'textarea' ? (
+                    <textarea
+                      id={fieldId}
+                      name={field.name}
+                      maxLength={field.maxLength}
+                      placeholder={field.placeholder}
+                      rows={4}
+                      className="w-full border rounded px-2 py-1 text-sm"
+                    />
+                  ) : (
+                    <input
+                      id={fieldId}
+                      name={field.name}
+                      type="text"
+                      maxLength={field.maxLength}
+                      placeholder={field.placeholder}
+                      className="w-full border rounded px-2 py-1 text-sm"
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </fieldset>
+        ))}
+      </noscript>
 
       {state?.errors && Object.keys(state.errors).length > 0 && (
         <Alert variant="destructive">
@@ -98,3 +159,4 @@ export function IdeaForm() {
     </form>
   );
 }
+

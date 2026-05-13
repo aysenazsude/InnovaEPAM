@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { createTestDb, loginAs } from '../../helpers/authHelpers';
 import { submitIdea } from '../../helpers/ideaHelpers';
 import { getMyIdeas, getIdeaById, getAdminIdeas } from '@/lib/actions/ideas';
-import { ideas } from '@/lib/db/schema';
+import { ideas, ideaCategoryData } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { auth } from '@/auth';
 
@@ -139,5 +139,42 @@ describe('getMyIdeas / getIdeaById / getAdminIdeas server actions', () => {
 
     const updated = await getIdeaById(idea.id, testDb);
     expect(updated?.status).toBe('under_review');
+  });
+});
+
+describe('getIdeaById — categoryData join', () => {
+  let testDb: ReturnType<typeof createTestDb>;
+
+  beforeEach(() => {
+    testDb = createTestDb();
+  });
+
+  it('should return null categoryData when no category fields were submitted', async () => {
+    const alice = await loginAs(testDb, 'submitter');
+    (auth as jest.Mock).mockResolvedValue({ user: { id: alice.id, role: 'submitter' } });
+    const idea = await submitIdea(testDb, alice.id, { category: 'other' });
+
+    const found = await getIdeaById(idea.id, testDb);
+
+    expect(found?.categoryData).toBeNull();
+  });
+
+  it('should return categoryData with fields when present', async () => {
+    const alice = await loginAs(testDb, 'submitter');
+    (auth as jest.Mock).mockResolvedValue({ user: { id: alice.id, role: 'submitter' } });
+    const idea = await submitIdea(testDb, alice.id, { category: 'process_improvement' });
+
+    // Manually insert category data row
+    await testDb.insert(ideaCategoryData).values({
+      ideaId: idea.id,
+      category: 'process_improvement',
+      fields: { affected_team: 'Platform', current_pain_point: 'Slow deploys.' },
+      createdAt: Math.floor(Date.now() / 1000),
+    });
+
+    const found = await getIdeaById(idea.id, testDb);
+
+    expect(found?.categoryData).not.toBeNull();
+    expect(found?.categoryData?.fields).toMatchObject({ affected_team: 'Platform' });
   });
 });

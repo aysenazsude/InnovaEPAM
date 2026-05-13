@@ -6,6 +6,8 @@ import { EvaluationForm } from '@/components/admin/EvaluationForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
+import { CATEGORY_FIELDS } from '@/lib/ideas/categoryFieldConfig';
+import { CategorySlug } from '@/lib/constants';
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -80,6 +82,32 @@ export default async function AdminIdeaDetailPage({ params }: Params) {
               </div>
             </>
           )}
+
+          {idea.categoryData && (() => {
+            const fieldDefs = CATEGORY_FIELDS[idea.categoryData.category as CategorySlug] ?? [];
+            const presentFields = fieldDefs.filter(
+              (f) => idea.categoryData!.fields[f.name] != null && idea.categoryData!.fields[f.name] !== ''
+            );
+            if (presentFields.length === 0) return null;
+            return (
+              <>
+                <Separator />
+                <section aria-labelledby="category-details-heading">
+                  <p id="category-details-heading" className="text-sm font-medium mb-2">
+                    Category Details
+                  </p>
+                  <dl className="space-y-1">
+                    {presentFields.map((f) => (
+                      <div key={f.name} className="flex gap-2 text-sm">
+                        <dt className="font-medium text-neutral-600 min-w-[160px]">{f.label}</dt>
+                        <dd className="text-neutral-900">{idea.categoryData!.fields[f.name]}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              </>
+            );
+          })()}
         </CardContent>
       </Card>
     </div>

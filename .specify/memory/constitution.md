@@ -1,25 +1,29 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.3.0 → 1.4.0
-Bump type: MINOR (final Testing Principle XI added)
+Version change: 1.4.0 → 1.4.1
+Bump type: PATCH (retroactive alignment of Execution Commands to match actual package.json)
 Last amended: 2026-05-13
 
-Added sections:
-  - Testing Principles: XI. Tools & Frameworks (REFERENCE)
-    Subsections: Static Analysis, Unit/Integration Testing, E2E Testing,
-                 Coverage & Quality, Execution Commands, Pre-commit Hook, CI/CD Pipeline
-
 Modified sections:
-  - Version / Last Amended lines updated
+  - XI. Tools & Frameworks → Execution Commands:
+      "test" script: removed --runInBand flag (package.json no longer uses it)
+      "test:unit" / "test:integration": --testPathPattern → --testPathPatterns
+        (plural form is the current Jest 29+ API; package.json was updated without
+         a prior constitution amendment — this PATCH corrects that retroactively)
+
+Added sections: None
+Removed sections: None
 
 Templates requiring updates:
-  - .specify/templates/plan-template.md  ✅ (Constitution Check gates: added XI)
+  - .specify/templates/plan-template.md  ✅ (no principle-breaking changes)
   - .specify/templates/spec-template.md  ✅ (no principle-breaking changes)
   - .specify/templates/tasks-template.md ✅ (no principle-breaking changes)
+  - .specify/templates/commands/         ✅ (directory does not exist — skip)
+
+Pre-commit hook (.husky/pre-commit): ✅ consistent with constitution
 
 Deferred items: None — all 11 principles (I–XI) are fully defined.
-  Testing Principles complete: IV–XI (8 sections as originally planned).
 -->
 
 # innovaEPAM Constitution
@@ -319,14 +323,14 @@ amendment before the change lands in CI.
 ```jsonc
 // package.json scripts (canonical — update here AND in package.json together)
 {
-  "typecheck":       "tsc --noEmit",
-  "lint":            "eslint . --max-warnings 0",
-  "test":            "jest --runInBand",
-  "test:unit":       "jest --testPathPattern='tests/unit'",
-  "test:integration":"jest --testPathPattern='tests/integration'",
-  "test:e2e":        "playwright test",
-  "test:coverage":   "jest --coverage",
-  "test:mutation":   "stryker run"
+  "typecheck":        "tsc --noEmit",
+  "lint":             "eslint . --max-warnings 0",
+  "test":             "jest",
+  "test:unit":        "jest --testPathPatterns='tests/unit'",
+  "test:integration": "jest --testPathPatterns='tests/integration'",
+  "test:e2e":         "playwright test",
+  "test:coverage":    "jest --coverage",
+  "test:mutation":    "stryker run"
 }
 ```
 
@@ -410,4 +414,4 @@ constitution and a spec, plan, or task document is resolved in favor of the cons
 All PRs and code reviews MUST verify compliance with all Core Principles and Testing Principles.
 Complexity introductions MUST be justified in writing within the PR description.
 
-**Version**: 1.4.0 | **Ratified**: 2026-05-12 | **Last Amended**: 2026-05-13
+**Version**: 1.4.1 | **Ratified**: 2026-05-12 | **Last Amended**: 2026-05-13

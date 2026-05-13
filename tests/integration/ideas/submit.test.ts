@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { createTestDb, loginAs } from '../../helpers/authHelpers';
-import { ideas } from '@/lib/db/schema';
+import { ideas, ideaCategoryData } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { submitIdea } from '@/lib/actions/ideas';
 import { auth } from '@/auth';
@@ -95,5 +95,107 @@ describe('submitIdea server action', () => {
 
     const all = await testDb.select().from(ideas);
     expect(all).toHaveLength(0);
+  });
+});
+
+describe('submitIdea — category-specific fields', () => {
+  let testDb: ReturnType<typeof createTestDb>;
+  let submitter: Awaited<ReturnType<typeof loginAs>>;
+
+  beforeEach(async () => {
+    testDb = createTestDb();
+    submitter = await loginAs(testDb, 'submitter');
+    (auth as jest.Mock).mockResolvedValue({ user: { id: submitter.id, role: 'submitter' } });
+  });
+
+  it('should persist category fields to idea_category_data on success', async () => {
+    const formData = new FormData();
+    formData.set('title', 'Process Idea');
+    formData.set('description', 'Detailed process description.');
+    formData.set('category', 'process_improvement');
+    formData.set('affected_team', 'Platform Engineering');
+    formData.set('current_pain_point', 'Slow CI pipeline.');
+
+    await expect(submitIdea(null, formData, testDb)).rejects.toMatchObject({ message: 'NEXT_REDIRECT' });
+
+    const [idea] = await testDb.select().from(ideas).where(eq(ideas.submitterId, submitter.id)).limit(1);
+    const [catData] = await testDb.select().from(ideaCategoryData).where(eq(ideaCategoryData.ideaId, idea.id));
+
+    expect(catData).toBeDefined();
+    expect(catData.category).toBe('process_improvement');
+    expect(catData.fields).toMatchObject({
+      affected_team: 'Platform Engineering',
+      current_pain_point: 'Slow CI pipeline.',
+    });
+  });
+
+  it('should succeed without inserting a category data row when no category fields are submitted', async () => {
+    const formData = new FormData();
+    formData.set('title', 'Generic Idea');
+    formData.set('description', 'Just a basic idea with no extra fields.');
+    formData.set('category', 'process_improvement');
+
+    await expect(submitIdea(null, formData, testDb)).rejects.toMatchObject({ message: 'NEXT_REDIRECT' });
+
+    const allCatData = await testDb.select().from(ideaCategoryData);
+    expect(allCatData).toHaveLength(0);
+  });
+
+  it('should return a field error when a text category field exceeds 100 chars', async () => {
+    const formData = new FormData();
+    formData.set('title', 'Process Idea');
+    formData.set('description', 'Detailed description.');
+    formData.set('category', 'process_improvement');
+    formData.set('affected_team', 'A'.repeat(101));
+
+    const result = await submitIdea(null, formData, testDb);
+
+    expect(result.errors?.['affected_team']).toBeDefined();
+    const allIdeas = await testDb.select().from(ideas);
+    expect(allIdeas).toHaveLength(0);
+  });
+
+  it('should return a field error when a textarea category field exceeds 500 chars', async () => {
+    const formData = new FormData();
+    formData.set('title', 'Process Idea');
+    formData.set('description', 'Detailed description.');
+    formData.set('category', 'process_improvement');
+    formData.set('current_pain_point', 'B'.repeat(501));
+
+    const result = await submitIdea(null, formData, testDb);
+
+    expect(result.errors?.['current_pain_point']).toBeDefined();
+    const allIdeas = await testDb.select().from(ideas);
+    expect(allIdeas).toHaveLength(0);
+  });
+
+  it('should not persist non-whitelisted FormData keys to idea_category_data', async () => {
+    const formData = new FormData();
+    formData.set('title', 'Process Idea');
+    formData.set('description', 'Detailed description.');
+    formData.set('category', 'process_improvement');
+    formData.set('affected_team', 'Engineering');
+    formData.set('__proto__', 'injection'); // should be ignored
+
+    await expect(submitIdea(null, formData, testDb)).rejects.toMatchObject({ message: 'NEXT_REDIRECT' });
+
+    const [idea] = await testDb.select().from(ideas).where(eq(ideas.submitterId, submitter.id)).limit(1);
+    const [catData] = await testDb.select().from(ideaCategoryData).where(eq(ideaCategoryData.ideaId, idea.id));
+
+    const ownKeys = Object.keys(catData.fields);
+    expect(ownKeys).not.toContain('__proto__');
+    expect(ownKeys).toContain('affected_team');
+  });
+
+  it('should not insert a category data row for "other" category', async () => {
+    const formData = new FormData();
+    formData.set('title', 'Other Idea');
+    formData.set('description', 'Some idea without category fields.');
+    formData.set('category', 'other');
+
+    await expect(submitIdea(null, formData, testDb)).rejects.toMatchObject({ message: 'NEXT_REDIRECT' });
+
+    const allCatData = await testDb.select().from(ideaCategoryData);
+    expect(allCatData).toHaveLength(0);
   });
 });

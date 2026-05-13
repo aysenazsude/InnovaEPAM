@@ -1,4 +1,5 @@
-import type { Idea, IdeaStatus } from '@/lib/db/schema';
+import type { Idea, IdeaStatus, IdeaCategoryData } from '@/lib/db/schema';
+import { CategorySlug } from '@/lib/constants';
 
 let ideaCounter = 1;
 
@@ -25,4 +26,19 @@ export function createIdea(
     evaluatedAt: overrides.evaluatedAt ?? null,
     ...overrides,
   };
+}
+
+export function createIdeaWithCategoryData(
+  category: CategorySlug,
+  fields: Record<string, string | null>,
+  overrides: Partial<Idea> = {}
+): { idea: Idea; categoryData: IdeaCategoryData } {
+  const idea = createIdea('submitted', { ...overrides, category });
+  const categoryData: IdeaCategoryData = {
+    ideaId: idea.id,
+    category,
+    fields,
+    createdAt: idea.submittedAt,
+  };
+  return { idea, categoryData };
 }

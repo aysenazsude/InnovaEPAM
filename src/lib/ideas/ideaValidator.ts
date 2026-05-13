@@ -1,4 +1,5 @@
 import { CATEGORIES, CategorySlug } from '@/lib/constants';
+import { CATEGORY_FIELDS } from '@/lib/ideas/categoryFieldConfig';
 
 const VALID_CATEGORY_SLUGS = new Set<CategorySlug>(CATEGORIES.map((c) => c.slug));
 
@@ -11,6 +12,7 @@ export function validateIdea(input: {
   title: string;
   description: string;
   category: string;
+  categoryFields?: Record<string, string>;
 }): IdeaValidationResult {
   const errors: Record<string, string> = {};
 
@@ -26,8 +28,23 @@ export function validateIdea(input: {
     errors.description = 'Description must be 2000 characters or fewer';
   }
 
-  if (!input.category || !VALID_CATEGORY_SLUGS.has(input.category as CategorySlug)) {
+  const isValidCategory = VALID_CATEGORY_SLUGS.has(input.category as CategorySlug);
+  if (!input.category || !isValidCategory) {
     errors.category = 'Please select a valid category';
+  }
+
+  // Validate category-specific fields when provided
+  if (input.categoryFields && isValidCategory) {
+    const fieldDefs = CATEGORY_FIELDS[input.category as CategorySlug];
+    for (const fieldDef of fieldDefs) {
+      const value = input.categoryFields[fieldDef.name];
+      if (value === undefined || value === null) continue;
+
+      if (fieldDef.maxLength !== undefined && value.length > fieldDef.maxLength) {
+        const limitLabel = fieldDef.type === 'textarea' ? '500' : '100';
+        errors[fieldDef.name] = `${fieldDef.label} must be ${limitLabel} characters or fewer`;
+      }
+    }
   }
 
   return {

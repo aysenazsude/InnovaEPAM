@@ -16,7 +16,7 @@ test.describe('Admin evaluates idea', () => {
   test('admin can open admin dashboard', async ({ page }) => {
     await loginAs(page, ADMIN_EMAIL, ADMIN_PASSWORD);
     await page.goto(`${BASE_URL}/admin`);
-    await expect(page.getByText('Admin Dashboard')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Admin Dashboard' })).toBeVisible();
   });
 
   test('empty comment blocked on evaluation', async ({ page }) => {

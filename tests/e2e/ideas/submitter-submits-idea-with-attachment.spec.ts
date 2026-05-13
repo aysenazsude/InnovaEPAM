@@ -20,19 +20,21 @@ async function registerAndLogin(page: Page, email: string) {
 }
 
 test.describe('Submit Idea with Attachment', () => {
+  test.describe.configure({ mode: 'serial' });
+
   test('form validation shown on empty submit', async ({ page }) => {
-    const email = `idea-${Date.now()}@example.com`;
+    const email = `idea-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
     await registerAndLogin(page, email);
 
     await page.goto(`${BASE_URL}/ideas/new`);
-    await page.click('button[type="submit"]');
+    await page.getByRole('button', { name: /submit idea/i }).click();
 
-    // Browser native required validation or server-side errors should appear
-    await expect(page.locator('form')).toBeVisible();
+    // The idea submission form should still be visible (submit was blocked by validation)
+    await expect(page.locator('form.space-y-6')).toBeVisible();
   });
 
   test('valid idea appears in listing with status Submitted', async ({ page }) => {
-    const email = `idea2-${Date.now()}@example.com`;
+    const email = `idea2-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
     await registerAndLogin(page, email);
 
     await page.goto(`${BASE_URL}/ideas/new`);
@@ -43,17 +45,16 @@ test.describe('Submit Idea with Attachment', () => {
     await page.locator('[id="category"]').click();
     await page.locator('[role="option"]').first().click();
 
-    await page.click('button[type="submit"]');
-
-    // Should redirect to idea detail or ideas listing
-    await page.waitForURL(/\/ideas/);
+    // Wait for redirect to idea detail page (UUID-based — won't match /ideas/new)
+    await page.getByRole('button', { name: /submit idea/i }).click();
+    await page.waitForURL(/\/ideas\/[a-f0-9-]{8}/, { timeout: 15000 });
 
     await page.goto(`${BASE_URL}/ideas`);
     await expect(page.getByText('My E2E Idea')).toBeVisible();
   });
 
   test('attachment upload: PDF appears with download link on idea detail', async ({ page }) => {
-    const email = `idea3-${Date.now()}@example.com`;
+    const email = `idea3-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
     await registerAndLogin(page, email);
 
     // Create a temp PDF-like file for upload
@@ -65,8 +66,8 @@ test.describe('Submit Idea with Attachment', () => {
     await page.fill('textarea[name="description"]', 'This idea has an attachment.');
     await page.locator('[id="category"]').click();
     await page.locator('[role="option"]').first().click();
-    await page.click('button[type="submit"]');
-    await page.waitForURL(/\/ideas\//);
+    await page.getByRole('button', { name: /submit idea/i }).click();
+    await page.waitForURL(/\/ideas\/[a-f0-9-]{8}/, { timeout: 15000 });
 
     // The detail page should be visible
     await expect(page.getByText('Idea with PDF')).toBeVisible();

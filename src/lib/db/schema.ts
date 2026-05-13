@@ -75,6 +75,19 @@ export const attachments = sqliteTable(
   (table) => [index('idx_attachments_idea_id').on(table.ideaId)]
 );
 
+// ── Idea Category Data ────────────────────────────────────────────────────────
+
+export const ideaCategoryData = sqliteTable('idea_category_data', {
+  ideaId: text('idea_id')
+    .primaryKey()
+    .references(() => ideas.id, { onDelete: 'cascade' }),
+  category: text('category').notNull(),
+  fields: text('fields', { mode: 'json' })
+    .$type<Record<string, string | null>>()
+    .notNull(),
+  createdAt: integer('created_at').notNull(),
+});
+
 // ── TypeScript types ──────────────────────────────────────────────────────────
 
 export type User = typeof users.$inferSelect;
@@ -84,6 +97,8 @@ export type NewIdea = typeof ideas.$inferInsert;
 export type Attachment = typeof attachments.$inferSelect;
 export type NewAttachment = typeof attachments.$inferInsert;
 export type IdeaCategory = typeof ideaCategories.$inferSelect;
+export type IdeaCategoryData = typeof ideaCategoryData.$inferSelect;
+export type NewIdeaCategoryData = typeof ideaCategoryData.$inferInsert;
 
 export type UserRole = 'submitter' | 'admin';
 export type IdeaStatus = 'submitted' | 'under_review' | 'accepted' | 'rejected';
