@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { isPipelineStatus, isActivePipelineStage, PIPELINE_STAGES } from '@/lib/ideas/pipelineMachine';
 import type { PipelineStage } from '@/lib/ideas/pipelineMachine';
 import type { StageTransitionView } from '@/lib/pipeline/pipelineRepository';
+import { ANONYMOUS_SUBMITTER_LABEL } from '@/lib/constants';
 import Link from 'next/link';
 
 type Params = { params: Promise<{ id: string }> };
@@ -72,7 +73,7 @@ async function PipelineReviewContent({ idea }: { idea: NonNullable<Awaited<Retur
         <CardHeader>
           <CardTitle className="text-xl">{idea.title}</CardTitle>
           <p className="text-sm text-neutral-500">
-            Submitted by <strong>{idea.submitterId}</strong> on {submittedDate}
+            Submitted by <strong>{ANONYMOUS_SUBMITTER_LABEL}</strong> on {submittedDate}
           </p>
         </CardHeader>
         <CardContent>

@@ -35,3 +35,5 @@ export const LOCKOUT_ATTEMPTS = 5;
 export const LOCKOUT_DURATION_SECONDS = 900; // 15 minutes
 
 export const MAX_DRAFTS_PER_USER = 10;
+
+export const ANONYMOUS_SUBMITTER_LABEL = 'Anonymous Submitter';

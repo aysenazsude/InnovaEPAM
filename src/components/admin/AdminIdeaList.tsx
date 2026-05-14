@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { IdeaWithAttachments } from '@/lib/actions/ideas';
+import type { AdminIdeaView } from '@/lib/ideas/anonymize';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -63,12 +63,12 @@ const statusClass: Record<string, string> = {
   approved: 'bg-green-200 text-green-900',
 };
 
-function isPipelineIdea(idea: IdeaWithAttachments): boolean {
+function isPipelineIdea(idea: AdminIdeaView): boolean {
   return PIPELINE_STATUSES.has(idea.status);
 }
 
 interface AdminIdeaListProps {
-  ideas: IdeaWithAttachments[];
+  ideas: AdminIdeaView[];
   pipelineCounts?: PipelineCounts;
   staleClarificationIdeaIds?: Set<string>;
 }
