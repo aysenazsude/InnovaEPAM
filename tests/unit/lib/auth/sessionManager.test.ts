@@ -42,9 +42,9 @@ describe('sessionManager', () => {
   });
 
   describe('getRoleHome', () => {
-    it('should return /ideas for submitter role', async () => {
+    it('should return /home for submitter role', async () => {
       const { getRoleHome } = await import('@/lib/auth/sessionManager');
-      expect(getRoleHome('submitter')).toBe('/ideas');
+      expect(getRoleHome('submitter')).toBe('/home');
     });
 
     it('should return /admin for admin role', async () => {
@@ -52,9 +52,9 @@ describe('sessionManager', () => {
       expect(getRoleHome('admin')).toBe('/admin');
     });
 
-    it('should default to /ideas for unknown role', async () => {
+    it('should default to /home for unknown role', async () => {
       const { getRoleHome } = await import('@/lib/auth/sessionManager');
-      expect(getRoleHome('unknown')).toBe('/ideas');
+      expect(getRoleHome('unknown')).toBe('/home');
     });
   });
 });

@@ -17,8 +17,8 @@ describe('middleware session guard (unit integration)', () => {
     expect(result).toBe('/login?returnUrl=%2Fideas%2Fnew');
   });
 
-  it('should redirect submitter to /ideas on successful session', () => {
-    expect(getRoleHome('submitter')).toBe('/ideas');
+  it('should redirect submitter to /home on successful session', () => {
+    expect(getRoleHome('submitter')).toBe('/home');
   });
 
   it('should redirect admin to /admin on successful session', () => {

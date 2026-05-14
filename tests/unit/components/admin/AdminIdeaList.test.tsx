@@ -3,6 +3,11 @@ import { render, screen } from '@testing-library/react';
 import { AdminIdeaList } from '@/components/admin/AdminIdeaList';
 import type { AdminIdeaView } from '@/lib/ideas/anonymize';
 
+jest.mock('@/lib/actions/spotlight', () => ({
+  pinEditorsPickAction: jest.fn(),
+  unpinEditorsPickAction: jest.fn(),
+}));
+
 jest.mock('next/link', () => {
   const MockLink = ({ children, href }: { children: React.ReactNode; href: string }) => (
     <a href={href}>{children}</a>

@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import type { PipelineCounts } from '@/lib/pipeline/pipelineRepository';
 import { PIPELINE_STAGES } from '@/lib/ideas/pipelineMachine';
+import { pinEditorsPickAction, unpinEditorsPickAction } from '@/lib/actions/spotlight';
 
 type StatusFilter =
   | 'all'
@@ -51,16 +52,16 @@ const PIPELINE_FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 
 const statusClass: Record<string, string> = {
-  submitted: 'bg-blue-100 text-blue-800',
-  under_review: 'bg-amber-100 text-amber-800',
-  accepted: 'bg-green-100 text-green-800',
-  rejected: 'bg-red-100 text-red-800',
-  screening: 'bg-purple-100 text-purple-800',
-  technical_review: 'bg-indigo-100 text-indigo-800',
-  business_review: 'bg-cyan-100 text-cyan-800',
-  final_decision: 'bg-orange-100 text-orange-800',
-  awaiting_clarification: 'bg-yellow-100 text-yellow-800',
-  approved: 'bg-green-200 text-green-900',
+  submitted: 'bg-blue-500/20 text-blue-400',
+  under_review: 'bg-amber-500/20 text-amber-400',
+  accepted: 'bg-green-500/20 text-green-400',
+  rejected: 'bg-red-500/20 text-red-400',
+  screening: 'bg-purple-500/20 text-purple-400',
+  technical_review: 'bg-indigo-500/20 text-indigo-400',
+  business_review: 'bg-cyan-500/20 text-cyan-400',
+  final_decision: 'bg-orange-500/20 text-orange-400',
+  awaiting_clarification: 'bg-yellow-500/20 text-yellow-400',
+  approved: 'bg-green-500/20 text-green-400',
 };
 
 function isPipelineIdea(idea: AdminIdeaView): boolean {
@@ -71,9 +72,10 @@ interface AdminIdeaListProps {
   ideas: AdminIdeaView[];
   pipelineCounts?: PipelineCounts;
   staleClarificationIdeaIds?: Set<string>;
+  currentPickIdeaId?: string | null;
 }
 
-export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds }: AdminIdeaListProps) {
+export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds, currentPickIdeaId }: AdminIdeaListProps) {
   const [filter, setFilter] = useState<StatusFilter>('all');
 
   const filtered =
@@ -97,7 +99,7 @@ export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds
             className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
               filter === value
                 ? 'bg-brand-500 text-white border-brand-500'
-                : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-50'
+                : 'bg-secondary text-muted-foreground border-border hover:bg-card hover:text-foreground'
             }`}
           >
             {label}
@@ -112,13 +114,13 @@ export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds
 
       {/* Pipeline stage sub-filters */}
       {showPipelineSubfilters && pipelineCounts && (
-        <div className="flex gap-2 flex-wrap pl-2 border-l-2 border-purple-200">
+        <div className="flex gap-2 flex-wrap pl-2 border-l-2 border-purple-800">
           <button
             onClick={() => setFilter('pipeline')}
             className={`px-2 py-0.5 rounded text-xs font-medium border ${
               filter === 'pipeline'
                 ? 'bg-purple-500 text-white border-purple-500'
-                : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                : 'bg-secondary text-muted-foreground border-border hover:bg-card hover:text-foreground'
             }`}
           >
             All Pipeline
@@ -132,12 +134,12 @@ export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds
                 className={`px-2 py-0.5 rounded text-xs font-medium border ${
                   filter === value
                     ? 'bg-purple-500 text-white border-purple-500'
-                    : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+                    : 'bg-secondary text-muted-foreground border-border hover:bg-card hover:text-foreground'
                 }`}
               >
                 {label}
                 {count > 0 && (
-                  <span className="ml-1 rounded-full bg-purple-100 px-1.5 text-purple-800 text-xs">
+                  <span className="ml-1 rounded-full bg-purple-500/20 px-1.5 text-purple-400 text-xs">
                     {count}
                   </span>
                 )}
@@ -148,7 +150,7 @@ export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds
       )}
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-neutral-500 py-8 text-center">No ideas in this category.</p>
+        <p className="text-sm text-muted-foreground py-8 text-center">No ideas in this category.</p>
       ) : (
         <ul className="space-y-3">
           {filtered.map((idea) => {
@@ -164,14 +166,19 @@ export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds
                         <div className="flex items-center gap-2">
                         <CardTitle className="text-sm">{idea.title}</CardTitle>
                         {staleClarificationIdeaIds?.has(idea.id) && (
-                          <span className="text-xs font-semibold text-amber-700 bg-amber-100 border border-amber-300 rounded px-1.5 py-0.5">
+                          <span className="text-xs font-semibold text-amber-400 bg-amber-500/20 border border-amber-800 rounded px-1.5 py-0.5">
                             ⚠ Stale
                           </span>
                         )}
                         </div>
                         <div className="flex items-center gap-2">
+                          {currentPickIdeaId === idea.id && (
+                            <span className="text-xs font-semibold text-yellow-400 bg-yellow-500/20 border border-yellow-800 rounded px-1.5 py-0.5">
+                              👑 Editor&apos;s Pick
+                            </span>
+                          )}
                           {idea.aggregateScore !== undefined && (
-                            <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 border border-yellow-300 rounded px-1.5 py-0.5">
+                            <span className="text-xs font-semibold text-yellow-400 bg-yellow-500/20 border border-yellow-800 rounded px-1.5 py-0.5">
                               ★ {idea.aggregateScore}
                             </span>
                           )}
@@ -184,13 +191,36 @@ export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds
                           </span>
                         </div>
                       </div>
-                      <p className="text-xs text-neutral-500">
+                      <p className="text-xs text-muted-foreground">
                         {idea.category.replace(/_/g, ' ')} &middot;{' '}
                         {format(new Date(idea.submittedAt * 1000), 'dd MMM yyyy')}
                       </p>
                     </CardHeader>
                   </Card>
                 </Link>
+                {/* Pin/Unpin Editor's Pick action */}
+                <div className="mt-1 flex justify-end px-1">
+                  {currentPickIdeaId === idea.id ? (
+                    <form action={unpinEditorsPickAction}>
+                      <button
+                        type="submit"
+                        className="text-xs text-muted-foreground hover:text-foreground border border-border rounded px-2 py-0.5 hover:bg-secondary transition-colors"
+                      >
+                        Unpin Editor&apos;s Pick
+                      </button>
+                    </form>
+                  ) : (
+                    <form action={pinEditorsPickAction}>
+                      <input type="hidden" name="ideaId" value={idea.id} />
+                      <button
+                        type="submit"
+                        className="text-xs text-yellow-400/70 hover:text-yellow-400 border border-yellow-900 rounded px-2 py-0.5 hover:bg-yellow-500/10 transition-colors"
+                      >
+                        Pin as Editor&apos;s Pick
+                      </button>
+                    </form>
+                  )}
+                </div>
               </li>
             );
           })}

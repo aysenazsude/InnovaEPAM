@@ -37,22 +37,24 @@
   --color-neutral-800: #343a40;
   --color-neutral-900: #212529;
 
-  /* shadcn/ui semantic aliases */
-  --color-background: #ffffff;
-  --color-foreground: #212529;
-  --color-primary: var(--color-brand-500);
+  /* shadcn/ui semantic aliases — Dark theme */
+  --color-background: #0d1117;
+  --color-foreground: #e6edf3;
+  --color-card: #161b22;
+  --color-card-foreground: #e6edf3;
+  --color-primary: var(--color-brand-400);
   --color-primary-foreground: #ffffff;
-  --color-secondary: var(--color-neutral-100);
-  --color-secondary-foreground: var(--color-neutral-900);
-  --color-muted: var(--color-neutral-100);
-  --color-muted-foreground: var(--color-neutral-600);
-  --color-accent: var(--color-accent-500);
+  --color-secondary: #21262d;
+  --color-secondary-foreground: #c9d1d9;
+  --color-muted: #21262d;
+  --color-muted-foreground: #8b949e;
+  --color-accent: var(--color-accent-400);
   --color-accent-foreground: #ffffff;
-  --color-destructive: #dc2626;
+  --color-destructive: #f85149;
   --color-destructive-foreground: #ffffff;
-  --color-border: var(--color-neutral-200);
-  --color-input: var(--color-neutral-200);
-  --color-ring: var(--color-brand-500);
+  --color-border: #30363d;
+  --color-input: #21262d;
+  --color-ring: var(--color-brand-400);
 
   /* Radius */
   --radius: 0.5rem;

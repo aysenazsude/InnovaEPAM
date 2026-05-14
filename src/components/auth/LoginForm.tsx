@@ -43,7 +43,7 @@ export function LoginForm() {
     if (returnUrl) {
       router.push(returnUrl);
     } else {
-      router.push('/ideas');
+      router.push('/home');
     }
     router.refresh();
   }

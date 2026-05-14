@@ -5,7 +5,9 @@ import { getPipelineCounts, getStaleClarificationIdeaIds } from '@/lib/actions/p
 import { AdminIdeaList } from '@/components/admin/AdminIdeaList';
 import { toAdminIdeaView } from '@/lib/ideas/anonymize';
 import { getIdeaAggregateScores } from '@/lib/pipeline/pipelineRepository';
+import { getSpotlightData } from '@/lib/actions/spotlight';
 import { db } from '@/lib/db';
+import { ShieldCheck } from 'lucide-react';
 
 export default async function AdminPage() {
   const session = await auth();
@@ -13,10 +15,11 @@ export default async function AdminPage() {
     redirect('/ideas');
   }
 
-  const [allIdeas, pipelineCounts, staleIds] = await Promise.all([
+  const [allIdeas, pipelineCounts, staleIds, spotlightData] = await Promise.all([
     getAdminIdeas(),
     getPipelineCounts(),
     getStaleClarificationIdeaIds(),
+    getSpotlightData(),
   ]);
 
   const ideaIds = allIdeas.map((i) => i.id);
@@ -26,9 +29,17 @@ export default async function AdminPage() {
   const adminViews = allIdeas.map((idea) => toAdminIdeaView(idea, scoreMap.get(idea.id)));
 
   return (
-    <div className="mx-auto max-w-3xl p-6 space-y-6">
-      <h1 className="text-2xl font-semibold">Admin Dashboard</h1>
-      <AdminIdeaList ideas={adminViews} pipelineCounts={pipelineCounts} staleClarificationIdeaIds={new Set(staleIds)} />
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+          <span className="flex items-center justify-center w-10 h-10 rounded-full bg-brand-500/20">
+            <ShieldCheck className="h-5 w-5 text-brand-400" aria-hidden="true" />
+        </span>
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{allIdeas.length} total idea{allIdeas.length !== 1 ? 's' : ''} in the portal</p>
+        </div>
+      </div>
+      <AdminIdeaList ideas={adminViews} pipelineCounts={pipelineCounts} staleClarificationIdeaIds={new Set(staleIds)} currentPickIdeaId={spotlightData.currentPickIdeaId} />
     </div>
   );
 }

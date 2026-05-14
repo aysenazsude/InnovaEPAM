@@ -16,7 +16,7 @@ async function registerAndLogin(page: Page, email: string) {
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
   await page.click('button[type="submit"]');
-  await page.waitForURL(/\/ideas/);
+  await page.waitForURL(/\/(home|ideas)/);
 }
 
 test.describe('Submit Idea with Attachment', () => {

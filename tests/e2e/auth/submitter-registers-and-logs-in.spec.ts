@@ -20,7 +20,7 @@ test.describe('Auth: Register → Login → Logout → Protected Redirect', () =
     await expect(page).toHaveURL(/\/login/);
   });
 
-  test('login after registration lands on /ideas', async ({ page }) => {
+  test('login after registration lands on /home', async ({ page }) => {
     // Register first
     await page.goto(`${BASE_URL}/register`);
     const email = `e2e-login-${Date.now()}@example.com`;
@@ -34,7 +34,7 @@ test.describe('Auth: Register → Login → Logout → Protected Redirect', () =
     await page.fill('input[name="email"]', email);
     await page.fill('input[name="password"]', password);
     await page.click('button[type="submit"]');
-    await expect(page).toHaveURL(/\/ideas/);
+    await expect(page).toHaveURL(/\/home/);
   });
 
   test('logout redirects to /login', async ({ page }) => {
@@ -49,7 +49,7 @@ test.describe('Auth: Register → Login → Logout → Protected Redirect', () =
     await page.fill('input[name="email"]', email);
     await page.fill('input[name="password"]', password);
     await page.click('button[type="submit"]');
-    await page.waitForURL(/\/ideas/);
+    await page.waitForURL(/\/(home|ideas)/);
 
     // Logout
     await page.click('button:has-text("Logout")');

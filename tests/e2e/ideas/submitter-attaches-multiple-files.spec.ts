@@ -30,7 +30,7 @@ async function registerAndLoginSubmitter(page: import('@playwright/test').Page) 
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', 'SecurePass1');
   await page.click('button[type="submit"]');
-  await page.waitForURL(/\/ideas/);
+  await page.waitForURL(/\/(home|ideas)/);
   return email;
 }
 

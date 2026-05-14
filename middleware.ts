@@ -12,7 +12,8 @@ export default auth(function middleware(req: NextRequest & { auth: unknown }) {
   // Protect all /(portal) routes
   const isPortalRoute =
     pathname.startsWith('/ideas') ||
-    pathname.startsWith('/admin');
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/home');
 
   if (isPortalRoute && !isAuthenticated) {
     const returnUrl = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
@@ -28,5 +29,6 @@ export const config = {
   matcher: [
     '/ideas/:path*',
     '/admin/:path*',
+    '/home',
   ],
 };

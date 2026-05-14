@@ -11,5 +11,5 @@ export function buildReturnUrl(path: string): string {
 
 export function getRoleHome(role: string): string {
   if (role === 'admin') return '/admin';
-  return '/ideas';
+  return '/home';
 }

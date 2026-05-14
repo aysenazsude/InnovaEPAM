@@ -282,3 +282,27 @@ export const evaluationScores = sqliteTable(
 
 export type EvaluationScore = typeof evaluationScores.$inferSelect;
 export type NewEvaluationScore = typeof evaluationScores.$inferInsert;
+
+// ── Spotlight Picks (Feature 009) ─────────────────────────────────────────────
+
+export const spotlightPicks = sqliteTable(
+  'spotlight_picks',
+  {
+    id: text('id').primaryKey(),
+    ideaId: text('idea_id')
+      .notNull()
+      .references(() => ideas.id, { onDelete: 'cascade' }),
+    monthYear: text('month_year').notNull(),
+    pinnedAt: integer('pinned_at').notNull(),
+    pinnedByAdminId: text('pinned_by_admin_id')
+      .notNull()
+      .references(() => users.id),
+  },
+  (table) => [
+    uniqueIndex('idx_spotlight_picks_month_year').on(table.monthYear),
+    index('idx_spotlight_picks_idea_id').on(table.ideaId),
+  ]
+);
+
+export type SpotlightPick = typeof spotlightPicks.$inferSelect;
+export type NewSpotlightPick = typeof spotlightPicks.$inferInsert;

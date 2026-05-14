@@ -11,7 +11,7 @@ export function IdeaList({ ideas }: IdeaListProps) {
   if (ideas.length === 0) {
     return (
       <section className="flex flex-col items-center gap-4 py-16 text-center">
-        <p className="text-neutral-500">You haven&apos;t submitted any ideas yet.</p>
+        <p className="text-muted-foreground">You haven&apos;t submitted any ideas yet.</p>
         <Button asChild>
           <Link href="/ideas/new">Submit Your First Idea</Link>
         </Button>
