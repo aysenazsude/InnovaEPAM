@@ -1,8 +1,16 @@
 import { notFound } from 'next/navigation';
+import { auth } from '@/auth';
 import { getIdeaById } from '@/lib/actions/ideas';
+import { getPipelineHistory } from '@/lib/actions/pipeline';
+import { getPendingClarification } from '@/lib/pipeline/pipelineRepository';
+import { db } from '@/lib/db';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { PipelineProgress } from '@/components/ideas/PipelineProgress';
+import { ClarificationResponseForm } from '@/components/ideas/ClarificationResponseForm';
+import { isPipelineStatus } from '@/lib/ideas/pipelineMachine';
+import type { StageTransitionView } from '@/lib/pipeline/pipelineRepository';
 
 const statusLabel: Record<string, string> = {
   submitted: 'Submitted',
@@ -18,6 +26,22 @@ export default async function IdeaDetailPage({ params }: Params) {
   const idea = await getIdeaById(id);
 
   if (!idea) notFound();
+
+  const session = await auth();
+  const isSubmitter = session?.user?.id === idea.submitterId;
+
+  // Fetch pipeline history for pipeline-status ideas
+  let pipelineHistory: StageTransitionView[] = [];
+  let pendingClarification: Awaited<ReturnType<typeof getPendingClarification>> = null;
+
+  if (isPipelineStatus(idea.status)) {
+    const historyResult = await getPipelineHistory(idea.id);
+    if (Array.isArray(historyResult)) pipelineHistory = historyResult;
+
+    if (idea.status === 'awaiting_clarification' && isSubmitter && idea.activeClarificationId) {
+      pendingClarification = await getPendingClarification(idea.id, db);
+    }
+  }
 
   const submittedDate = format(new Date(idea.submittedAt * 1000), 'dd MMM yyyy');
 
@@ -35,6 +59,24 @@ export default async function IdeaDetailPage({ params }: Params) {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="whitespace-pre-wrap text-sm">{idea.description}</p>
+
+          {isPipelineStatus(idea.status) && (
+            <>
+              <Separator />
+              <PipelineProgress currentStatus={idea.status} history={pipelineHistory} />
+
+              {pendingClarification && idea.status === 'awaiting_clarification' && (
+                <>
+                  <Separator />
+                  <ClarificationResponseForm
+                    ideaId={idea.id}
+                    clarificationId={pendingClarification.id}
+                    question={pendingClarification.question}
+                  />
+                </>
+              )}
+            </>
+          )}
 
           {idea.attachments.length > 0 ? (
             <>

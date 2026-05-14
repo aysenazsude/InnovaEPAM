@@ -103,6 +103,15 @@ export default async function AdminIdeaDetailPage({ params }: Params) {
             <>
               <Separator />
               <EvaluationForm ideaId={idea.id} attachments={idea.attachments} />
+              <div className="pt-2 border-t border-neutral-100">
+                <p className="text-xs text-neutral-500 mb-2">Or move this idea into the multi-stage pipeline:</p>
+                <a
+                  href={`/admin/ideas/${idea.id}/review`}
+                  className="inline-flex items-center gap-1.5 rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+                >
+                  Start Pipeline Review →
+                </a>
+              </div>
             </>
           )}
 

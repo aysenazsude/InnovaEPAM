@@ -34,12 +34,20 @@ export default async function PortalLayout({
               Admin Dashboard
             </Link>
           ) : (
-            <Link
-              href="/ideas"
-              className="text-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
-            >
-              My Ideas
-            </Link>
+            <>
+              <Link
+                href="/ideas"
+                className="text-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                My Ideas
+              </Link>
+              <Link
+                href="/ideas/drafts"
+                className="text-sm hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                My Drafts
+              </Link>
+            </>
           )}
         </div>
 

@@ -18,8 +18,9 @@ jest.mock('@/lib/db', () => {
 // Must be declared before jest.mock so the factory closure captures it.
 const fsMockCtrl: {
   existsSync: ((p: PathLike) => boolean) | undefined;
+  statSync: (() => { size: number }) | undefined;
   readFileSync: (() => Buffer) | undefined;
-} = { existsSync: undefined, readFileSync: undefined };
+} = { existsSync: undefined, statSync: undefined, readFileSync: undefined };
 
 jest.mock('node:fs', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -28,6 +29,10 @@ jest.mock('node:fs', () => {
     ...actual,
     existsSync: (p: PathLike) =>
       fsMockCtrl.existsSync ? fsMockCtrl.existsSync(p) : actual.existsSync(p),
+    statSync: (...args: unknown[]) =>
+      fsMockCtrl.statSync
+        ? fsMockCtrl.statSync()
+        : actual.statSync(...(args as [PathLike])),
     readFileSync: (...args: unknown[]) =>
       fsMockCtrl.readFileSync
         ? fsMockCtrl.readFileSync()
@@ -37,6 +42,7 @@ jest.mock('node:fs', () => {
 
 afterEach(() => {
   fsMockCtrl.existsSync = undefined;
+  fsMockCtrl.statSync = undefined;
   fsMockCtrl.readFileSync = undefined;
 });
 
@@ -123,6 +129,7 @@ describe('GET /api/attachments/[id]', () => {
 
     const fileContent = Buffer.from('%PDF-1 test content');
     fsMockCtrl.existsSync = () => true;
+    fsMockCtrl.statSync = () => ({ size: fileContent.byteLength });
     fsMockCtrl.readFileSync = () => fileContent;
 
     const idea = await submitIdea(testDb, alice.id);
@@ -147,6 +154,7 @@ describe('GET /api/attachments/[id]', () => {
     dbModule.db = testDb;
 
     fsMockCtrl.existsSync = () => true;
+    fsMockCtrl.statSync = () => ({ size: 100 });
     fsMockCtrl.readFileSync = () => Buffer.from('%PDF-admin');
 
     const idea = await submitIdea(testDb, alice.id);

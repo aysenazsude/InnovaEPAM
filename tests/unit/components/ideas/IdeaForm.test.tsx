@@ -7,6 +7,10 @@ jest.mock('@/lib/actions/ideas', () => ({
   submitIdea: jest.fn(),
 }));
 
+jest.mock('@/lib/actions/drafts', () => ({
+  saveDraft: jest.fn(),
+}));
+
 jest.mock('@/components/ideas/FileUpload', () => ({
   FileUpload: () => <div data-testid="file-upload-mock" />,
 }));

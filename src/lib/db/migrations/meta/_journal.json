@@ -22,6 +22,20 @@
       "when": 1778773893162,
       "tag": "0002_wild_puff_adder",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1778785586831,
+      "tag": "0003_young_saracen",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1778788196054,
+      "tag": "0004_lowly_thanos",
+      "breakpoints": true
     }
   ]
 }

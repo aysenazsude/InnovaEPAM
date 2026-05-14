@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useState, useRef, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,21 +8,65 @@ import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { submitIdea, SubmitIdeaResult } from '@/lib/actions/ideas';
+import { saveDraft, type SaveDraftResult } from '@/lib/actions/drafts';
 import { CATEGORIES, CategorySlug } from '@/lib/constants';
 import { CATEGORY_FIELDS } from '@/lib/ideas/categoryFieldConfig';
 import { CategoryFields } from '@/components/ideas/CategoryFields';
 import { FileUpload } from '@/components/ideas/FileUpload';
 
 const initialState: SubmitIdeaResult | null = null;
+const initialDraftState: SaveDraftResult | null = null;
 
-export function IdeaForm() {
+export interface DraftFormValues {
+  title?: string;
+  description?: string;
+  category?: CategorySlug;
+}
+
+interface IdeaFormProps {
+  /** When resuming a draft, pass the draft ID to pre-fill and update it on save. */
+  draftId?: string;
+  /** Optimistic concurrency version of the draft being edited. */
+  draftVersion?: number;
+  /** Pre-filled values from an existing draft. */
+  defaultValues?: DraftFormValues;
+}
+
+export function IdeaForm({ draftId, draftVersion, defaultValues }: IdeaFormProps = {}) {
   const [state, formAction, pending] = useActionState(submitIdea, initialState);
-  const [selectedCategory, setSelectedCategory] = useState<CategorySlug | undefined>(undefined);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [draftState, setDraftState] = useState<SaveDraftResult | null>(initialDraftState);
+  const [selectedCategory, setSelectedCategory] = useState<CategorySlug | undefined>(
+    defaultValues?.category
+  );
+  const [title, setTitle] = useState(defaultValues?.title ?? '');
+  const [description, setDescription] = useState(defaultValues?.description ?? '');
+  const [currentDraftId, setCurrentDraftId] = useState<string | undefined>(draftId);
+  const [currentVersion, setCurrentVersion] = useState<number | undefined>(draftVersion);
+  const [draftSaving, startDraftTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function handleSaveDraft() {
+    if (!formRef.current) return;
+    const formData = new FormData(formRef.current);
+    if (currentDraftId) formData.set('draftId', currentDraftId);
+    if (currentVersion != null) formData.set('version', String(currentVersion));
+
+    startDraftTransition(async () => {
+      const result = await saveDraft(null, formData);
+      setDraftState(result);
+      if (result.success && result.draftId) {
+        setCurrentDraftId(result.draftId);
+        setCurrentVersion(result.version);
+      }
+    });
+  }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form ref={formRef} action={formAction} className="space-y-6">
+      {/* Hidden draft coordination fields (populated by handleSaveDraft) */}
+      {currentDraftId && <input type="hidden" name="draftId" value={currentDraftId} />}
+      {currentVersion != null && <input type="hidden" name="version" value={currentVersion} />}
+
       <div className="space-y-1">
         <Label htmlFor="title">Title</Label>
         <Input
@@ -165,9 +209,41 @@ export function IdeaForm() {
         </div>
       )}
 
-      <Button type="submit" disabled={pending}>
-        {pending ? 'Submitting…' : 'Submit Idea'}
-      </Button>
+      {/* Draft save feedback */}
+      {draftState && (
+        <div aria-live="polite" className="text-sm">
+          {draftState.success && (
+            <p className="text-green-600">Draft saved successfully.</p>
+          )}
+          {draftState.limitReached && (
+            <p className="text-amber-600">
+              You have reached the maximum number of drafts (10). Please delete a draft before saving.
+            </p>
+          )}
+          {draftState.conflict && (
+            <p className="text-red-600">
+              This draft was updated in another tab. Please reload to get the latest version.
+            </p>
+          )}
+          {draftState.errors && (
+            <p className="text-red-600">Failed to save draft. Please try again.</p>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        <Button type="submit" disabled={pending}>
+          {pending ? 'Submitting…' : 'Submit Idea'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          disabled={draftSaving}
+          onClick={handleSaveDraft}
+        >
+          {draftSaving ? 'Saving…' : 'Save Draft'}
+        </Button>
+      </div>
     </form>
   );
 }

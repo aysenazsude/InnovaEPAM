@@ -10,6 +10,11 @@ jest.mock('@/lib/actions/ideas', () => ({
   submitIdea: jest.fn(),
 }));
 
+// Mock the saveDraft server action
+jest.mock('@/lib/actions/drafts', () => ({
+  saveDraft: jest.fn(),
+}));
+
 // Mock useActionState to avoid server-action complexity in unit tests
 jest.mock('react', () => {
   const actual = jest.requireActual<typeof import('react')>('react');

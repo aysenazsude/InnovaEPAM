@@ -33,3 +33,5 @@ export const SESSION_MAX_AGE_SECONDS = 28_800; // 8 hours
 export const LOCKOUT_ATTEMPTS = 5;
 
 export const LOCKOUT_DURATION_SECONDS = 900; // 15 minutes
+
+export const MAX_DRAFTS_PER_USER = 10;
