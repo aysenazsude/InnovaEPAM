@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { submitIdea, SubmitIdeaResult } from '@/lib/actions/ideas';
-import { CATEGORIES, ALLOWED_MIME_TYPES, CategorySlug } from '@/lib/constants';
+import { CATEGORIES, CategorySlug } from '@/lib/constants';
 import { CATEGORY_FIELDS } from '@/lib/ideas/categoryFieldConfig';
 import { CategoryFields } from '@/components/ideas/CategoryFields';
+import { FileUpload } from '@/components/ideas/FileUpload';
 
 const initialState: SubmitIdeaResult | null = null;
 
@@ -137,21 +138,32 @@ export function IdeaForm() {
       )}
 
       <div className="space-y-1">
-        <Label htmlFor="file">
-          Attachment <span className="text-neutral-400 font-normal">(optional)</span>
+        <Label>
+          Attachments <span className="text-neutral-400 font-normal">(optional, up to 3 files)</span>
         </Label>
-        <input
-          id="file"
-          name="file"
-          type="file"
-          accept={[...ALLOWED_MIME_TYPES].join(',')}
-          className="text-sm"
-        />
-        <p className="text-xs text-neutral-500">PDF, DOC, DOCX, PNG or JPEG — max 10 MB</p>
+        <FileUpload />
+        <p className="text-xs text-neutral-500">PDF, DOC, DOCX, PPTX, PNG, JPEG, MP4, MOV — max 10 MB each / 30 MB total</p>
         {state?.errors?.file && (
           <p className="text-sm text-red-600">{state.errors.file}</p>
         )}
+        {state?.errors?.files && (
+          <p className="text-sm text-red-600">{state.errors.files}</p>
+        )}
+        {state?.errors?.totalSize && (
+          <p className="text-sm text-red-600">{state.errors.totalSize}</p>
+        )}
       </div>
+
+      {pending && (
+        <div
+          role="progressbar"
+          aria-busy="true"
+          aria-label="Uploading files…"
+          className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200"
+        >
+          <div className="h-full w-full animate-pulse bg-brand-500" />
+        </div>
+      )}
 
       <Button type="submit" disabled={pending}>
         {pending ? 'Submitting…' : 'Submit Idea'}

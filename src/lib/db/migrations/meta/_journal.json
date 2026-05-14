@@ -15,6 +15,13 @@
       "when": 1778701545362,
       "tag": "0001_cool_sandman",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778773893162,
+      "tag": "0002_wild_puff_adder",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { IdeaWithAttachment } from '@/lib/actions/ideas';
+import { IdeaWithAttachments } from '@/lib/actions/ideas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
@@ -25,7 +25,7 @@ const statusClass: Record<string, string> = {
 };
 
 interface AdminIdeaListProps {
-  ideas: IdeaWithAttachment[];
+  ideas: IdeaWithAttachments[];
 }
 
 export function AdminIdeaList({ ideas }: AdminIdeaListProps) {

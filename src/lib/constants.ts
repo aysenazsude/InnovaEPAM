@@ -2,13 +2,19 @@ export const ALLOWED_MIME_TYPES = [
   'application/pdf',
   'application/msword',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   'image/png',
   'image/jpeg',
+  'video/mp4',
+  'video/quicktime',
 ] as const;
 
 export type AllowedMimeType = (typeof ALLOWED_MIME_TYPES)[number];
 
 export const FILE_SIZE_LIMIT = 10_485_760; // 10 MB in bytes
+
+export const MAX_ATTACHMENTS_PER_IDEA = 3;
+export const MAX_TOTAL_ATTACHMENT_SIZE = 31_457_280; // 30 MB in bytes (3 × 10 MB)
 
 export const CATEGORIES = [
   { slug: 'technical_innovation', displayName: 'Technical Innovation' },

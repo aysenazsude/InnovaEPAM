@@ -70,6 +70,7 @@ export const attachments = sqliteTable(
     fileType: text('file_type').notNull(),
     fileSize: integer('file_size').notNull(),
     storagePath: text('storage_path').notNull().unique(),
+    uploadOrderIndex: integer('upload_order_index').notNull().default(0),
     uploadedAt: integer('uploaded_at').notNull(),
   },
   (table) => [index('idx_attachments_idea_id').on(table.ideaId)]

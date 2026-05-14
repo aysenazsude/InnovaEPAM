@@ -1,0 +1,1 @@
+ALTER TABLE `attachments` ADD `upload_order_index` integer DEFAULT 0 NOT NULL;

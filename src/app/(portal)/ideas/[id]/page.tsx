@@ -3,7 +3,6 @@ import { getIdeaById } from '@/lib/actions/ideas';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { FileUpload } from '@/components/ideas/FileUpload';
 
 const statusLabel: Record<string, string> = {
   submitted: 'Submitted',
@@ -37,29 +36,34 @@ export default async function IdeaDetailPage({ params }: Params) {
         <CardContent className="space-y-4">
           <p className="whitespace-pre-wrap text-sm">{idea.description}</p>
 
-          {idea.attachment ? (
+          {idea.attachments.length > 0 ? (
             <>
               <Separator />
               <div>
-                <p className="text-sm font-medium mb-1">Attachment</p>
-                <a
-                  href={`/api/attachments/${idea.attachment.id}`}
-                  className="text-sm text-brand-500 underline"
-                  download={idea.attachment.fileName}
-                >
-                  {idea.attachment.fileName}
-                </a>
+                <p className="text-sm font-medium mb-1">
+                  {idea.attachments.length === 1 ? 'Attachment' : 'Attachments'}
+                </p>
+                <ul className="space-y-1">
+                  {idea.attachments.map((att) => (
+                    <li key={att.id}>
+                      <a
+                        href={`/api/attachments/${att.id}`}
+                        className="text-sm text-brand-500 underline"
+                        download={att.fileName}
+                      >
+                        {att.fileName}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </>
-          ) : idea.status === 'submitted' ? (
+          ) : (
             <>
               <Separator />
-              <div>
-                <p className="text-sm font-medium mb-1">Attachment <span className="text-neutral-400 font-normal">(optional)</span></p>
-                <FileUpload ideaId={idea.id} />
-              </div>
+              <p className="text-sm text-neutral-400">No attachments</p>
             </>
-          ) : null}
+          )}
 
           {(idea.status === 'accepted' || idea.status === 'rejected') && idea.adminComment && (
             <>

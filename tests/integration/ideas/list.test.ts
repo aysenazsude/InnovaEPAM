@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { createTestDb, loginAs } from '../../helpers/authHelpers';
 import { submitIdea } from '../../helpers/ideaHelpers';
+import { attachFile } from '../../helpers/attachmentHelpers';
 import { getMyIdeas, getIdeaById, getAdminIdeas } from '@/lib/actions/ideas';
 import { ideas, ideaCategoryData } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
@@ -45,14 +46,14 @@ describe('getMyIdeas / getIdeaById / getAdminIdeas server actions', () => {
     expect(result).toEqual([]);
   });
 
-  it('should include attachment field (null when no attachment)', async () => {
+  it('should include attachments array (empty when no attachment)', async () => {
     const alice = await loginAs(testDb, 'submitter');
     (auth as jest.Mock).mockResolvedValue({ user: { id: alice.id, role: 'submitter' } });
     await submitIdea(testDb, alice.id, { title: 'No Attachment Idea' });
 
     const [idea] = await getMyIdeas(testDb);
 
-    expect(idea.attachment).toBeNull();
+    expect(idea.attachments).toEqual([]);
   });
 
   it('should redirect to /login when session is missing for getMyIdeas', async () => {
@@ -96,7 +97,7 @@ describe('getMyIdeas / getIdeaById / getAdminIdeas server actions', () => {
     const found = await getIdeaById(idea.id, testDb);
 
     expect(found?.title).toBe('Special Idea');
-    expect(found?.attachment).toBeNull();
+    expect(found?.attachments).toEqual([]);
   });
 
   it('should return null for an idea belonging to another submitter', async () => {
@@ -176,5 +177,78 @@ describe('getIdeaById — categoryData join', () => {
 
     expect(found?.categoryData).not.toBeNull();
     expect(found?.categoryData?.fields).toMatchObject({ affected_team: 'Platform' });
+  });
+});
+
+describe('getMyIdeas / getIdeaById / getAdminIdeas — multi-attachment (Phase 3)', () => {
+  let testDb: ReturnType<typeof createTestDb>;
+
+  beforeEach(() => {
+    testDb = createTestDb();
+  });
+
+  it('returns all 3 attachments ordered by uploadOrderIndex for getIdeaById', async () => {
+    const alice = await loginAs(testDb, 'submitter');
+    (auth as jest.Mock).mockResolvedValue({ user: { id: alice.id, role: 'submitter' } });
+    const idea = await submitIdea(testDb, alice.id);
+
+    // Insert 3 attachments in reverse order to verify sorting
+    await attachFile(testDb, idea.id, 'video/mp4', 500_000, 2);
+    await attachFile(testDb, idea.id, 'image/png', 100_000, 1);
+    await attachFile(testDb, idea.id, 'application/pdf', 200_000, 0);
+
+    const found = await getIdeaById(idea.id, testDb);
+
+    expect(found?.attachments).toHaveLength(3);
+    expect(found?.attachments[0].uploadOrderIndex).toBe(0);
+    expect(found?.attachments[1].uploadOrderIndex).toBe(1);
+    expect(found?.attachments[2].uploadOrderIndex).toBe(2);
+    expect(found?.attachments[0].fileType).toBe('application/pdf');
+    expect(found?.attachments[1].fileType).toBe('image/png');
+    expect(found?.attachments[2].fileType).toBe('video/mp4');
+  });
+
+  it('returns empty attachments array for idea with no attachments', async () => {
+    const alice = await loginAs(testDb, 'submitter');
+    (auth as jest.Mock).mockResolvedValue({ user: { id: alice.id, role: 'submitter' } });
+    const idea = await submitIdea(testDb, alice.id);
+
+    const found = await getIdeaById(idea.id, testDb);
+
+    expect(found?.attachments).toEqual([]);
+  });
+
+  it('getMyIdeas returns all attachments for idea with 3 files', async () => {
+    const alice = await loginAs(testDb, 'submitter');
+    (auth as jest.Mock).mockResolvedValue({ user: { id: alice.id, role: 'submitter' } });
+    const idea = await submitIdea(testDb, alice.id, { title: 'Three Files' });
+
+    await attachFile(testDb, idea.id, 'application/pdf', 100_000, 0);
+    await attachFile(testDb, idea.id, 'image/jpeg', 200_000, 1);
+    await attachFile(testDb, idea.id, 'video/mp4', 300_000, 2);
+
+    const myIdeas = await getMyIdeas(testDb);
+    const found = myIdeas.find((i) => i.id === idea.id);
+
+    expect(found?.attachments).toHaveLength(3);
+  });
+
+  it('getAdminIdeas returns attachments[] for all ideas', async () => {
+    const admin = await loginAs(testDb, 'admin');
+    const alice = await loginAs(testDb, 'submitter');
+    (auth as jest.Mock).mockResolvedValue({ user: { id: admin.id, role: 'admin' } });
+
+    const idea1 = await submitIdea(testDb, alice.id, { title: 'Idea 1' });
+    const idea2 = await submitIdea(testDb, alice.id, { title: 'Idea 2' });
+
+    await attachFile(testDb, idea1.id, 'application/pdf', 100_000, 0);
+    await attachFile(testDb, idea1.id, 'image/png', 50_000, 1);
+
+    const adminIdeas = await getAdminIdeas(testDb);
+    const found1 = adminIdeas.find((i) => i.id === idea1.id);
+    const found2 = adminIdeas.find((i) => i.id === idea2.id);
+
+    expect(found1?.attachments).toHaveLength(2);
+    expect(found2?.attachments).toHaveLength(0);
   });
 });

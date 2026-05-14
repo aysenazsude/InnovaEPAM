@@ -19,6 +19,7 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "coverage/**",
+      ".stryker-tmp/**",
       "next-env.d.ts",
     ],
   },

@@ -6,7 +6,8 @@ export async function attachFile(
   db: TestDB,
   ideaId: string,
   mimeType = 'application/pdf',
-  sizeBytes = 1_048_576
+  sizeBytes = 1_048_576,
+  uploadOrderIndex = 0
 ): Promise<typeof attachments.$inferSelect> {
   const id = randomUUID();
   const [attachment] = await db
@@ -18,6 +19,7 @@ export async function attachFile(
       fileType: mimeType,
       fileSize: sizeBytes,
       storagePath: `${id}.pdf`,
+      uploadOrderIndex,
       uploadedAt: Math.floor(Date.now() / 1000),
     })
     .returning();

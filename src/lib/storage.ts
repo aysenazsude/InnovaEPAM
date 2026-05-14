@@ -6,8 +6,11 @@ const MIME_TO_EXTENSION: Record<string, string> = {
   'application/pdf': '.pdf',
   'application/msword': '.doc',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': '.pptx',
   'image/png': '.png',
   'image/jpeg': '.jpg',
+  'video/mp4': '.mp4',
+  'video/quicktime': '.mov',
 };
 
 /**

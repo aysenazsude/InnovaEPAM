@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import Database from 'better-sqlite3';
+import bcrypt from 'bcryptjs';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 const KNOWN_PASSWORD = 'CorrectPass1';
@@ -7,17 +11,18 @@ const WRONG_PASSWORD = 'WrongPass999';
 test.describe('Auth: Account Lockout', () => {
   let lockedEmail: string;
 
-  test.beforeAll(async ({ browser }) => {
-    // Register a user to lock out
-    const page = await browser.newPage();
+  test.beforeAll(async () => {
+    // Create the user directly in the DB to avoid UI-registration race conditions
+    // (parallel SQLite writes can cause transient "Registration failed" errors)
     lockedEmail = `lockout-${Date.now()}@example.com`;
-    await page.goto(`${BASE_URL}/register`);
-    await page.fill('input[name="displayName"]', 'Lockout User');
-    await page.fill('input[name="email"]', lockedEmail);
-    await page.fill('input[name="password"]', KNOWN_PASSWORD);
-    await page.click('button[type="submit"]');
-    await page.waitForURL(/\/login/);
-    await page.close();
+    const dbPath = path.join(process.cwd(), 'data', 'innovatepam.db');
+    const db = new Database(dbPath);
+    const hash = bcrypt.hashSync(KNOWN_PASSWORD, 10);
+    db.prepare(
+      `INSERT INTO users (id, display_name, email, password_hash, role, failed_login_count, locked_until, created_at)
+       VALUES (?, 'Lockout User', ?, ?, 'submitter', 0, NULL, ?)`
+    ).run(randomUUID(), lockedEmail, hash, Math.floor(Date.now() / 1000));
+    db.close();
   });
 
   test('5 wrong-password attempts trigger lockout message', async ({ page }) => {

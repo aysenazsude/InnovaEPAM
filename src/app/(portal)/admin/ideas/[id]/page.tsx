@@ -50,26 +50,59 @@ export default async function AdminIdeaDetailPage({ params }: Params) {
         <CardContent className="space-y-4">
           <p className="whitespace-pre-wrap text-sm">{idea.description}</p>
 
-          {idea.attachment && (
+          {idea.attachments.length > 0 ? (
             <>
               <Separator />
               <div>
-                <p className="text-sm font-medium mb-1">Attachment</p>
-                <a
-                  href={`/api/attachments/${idea.attachment.id}`}
-                  className="text-sm text-brand-500 underline"
-                  download={idea.attachment.fileName}
-                >
-                  {idea.attachment.fileName}
-                </a>
+                <p className="text-sm font-medium mb-2">
+                  {idea.attachments.length === 1 ? 'Attachment' : `Attachments (${idea.attachments.length})`}
+                </p>
+                <ul className="space-y-2">
+                  {idea.attachments.map((att) => {
+                    const sizeKb = att.fileSize / 1024;
+                    const formattedSize = sizeKb >= 1024
+                      ? `${(sizeKb / 1024).toFixed(1)} MB`
+                      : `${Math.round(sizeKb)} KB`;
+                    const typeLabel =
+                      att.fileType === 'application/pdf' ? 'PDF'
+                      : att.fileType === 'application/msword' ? 'DOC'
+                      : att.fileType.includes('wordprocessingml') ? 'DOCX'
+                      : att.fileType.includes('presentationml') ? 'PPTX'
+                      : att.fileType === 'image/png' ? 'PNG'
+                      : att.fileType === 'image/jpeg' ? 'JPEG'
+                      : att.fileType === 'video/mp4' ? 'MP4'
+                      : att.fileType === 'video/quicktime' ? 'MOV'
+                      : att.fileType;
+                    return (
+                      <li key={att.id} className="flex items-center gap-3 text-sm">
+                        <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-xs font-medium text-neutral-600">
+                          {typeLabel}
+                        </span>
+                        <a
+                          href={`/api/attachments/${att.id}`}
+                          className="text-brand-500 underline flex-1 truncate"
+                          download={att.fileName}
+                        >
+                          {att.fileName}
+                        </a>
+                        <span className="text-neutral-400 text-xs shrink-0">{formattedSize}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
+            </>
+          ) : (
+            <>
+              <Separator />
+              <p className="text-sm text-neutral-400">No attachments</p>
             </>
           )}
 
           {canEvaluate && (
             <>
               <Separator />
-              <EvaluationForm ideaId={idea.id} />
+              <EvaluationForm ideaId={idea.id} attachments={idea.attachments} />
             </>
           )}
 

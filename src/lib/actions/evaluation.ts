@@ -37,8 +37,6 @@ export async function transitionToUnderReview(ideaId: string, dbInstance: DB = d
     .set({ status: 'under_review', evaluatingAdminId: adminUser.id })
     .where(eq(ideas.id, ideaId));
 
-  revalidatePath('/admin');
-  revalidatePath('/ideas');
   return {};
 }
 

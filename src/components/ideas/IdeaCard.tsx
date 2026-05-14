@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IdeaWithAttachment } from '@/lib/actions/ideas';
+import { IdeaWithAttachments } from '@/lib/actions/ideas';
 import Link from 'next/link';
 
 const statusConfig: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
@@ -19,7 +19,7 @@ const statusClass: Record<string, string> = {
 };
 
 interface IdeaCardProps {
-  idea: IdeaWithAttachment;
+  idea: IdeaWithAttachments;
 }
 
 export function IdeaCard({ idea }: IdeaCardProps) {

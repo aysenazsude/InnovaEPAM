@@ -1,10 +1,10 @@
-import { IdeaWithAttachment } from '@/lib/actions/ideas';
+import { IdeaWithAttachments } from '@/lib/actions/ideas';
 import { IdeaCard } from './IdeaCard';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 interface IdeaListProps {
-  ideas: IdeaWithAttachment[];
+  ideas: IdeaWithAttachments[];
 }
 
 export function IdeaList({ ideas }: IdeaListProps) {

@@ -1,86 +1,199 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { FILE_SIZE_LIMIT, ALLOWED_MIME_TYPES } from '@/lib/constants';
+import { MAX_ATTACHMENTS_PER_IDEA, ALLOWED_MIME_TYPES, FILE_SIZE_LIMIT } from '@/lib/constants';
+import { getPreviewKind, PreviewKind } from '@/lib/attachments/mimeToIcon';
 
-interface FileUploadProps {
-  ideaId: string;
-  onUploadComplete?: () => void;
+interface StagedFile {
+  file: File;
+  previewUrl: string;
+  kind: PreviewKind;
+  error: string | null;
 }
 
-export function FileUpload({ ideaId, onUploadComplete }: FileUploadProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const router = useRouter();
+export function FileUpload() {
+  const [staged, setStaged] = useState<StagedFile[]>([]);
+  const pickerRef = useRef<HTMLInputElement>(null);
+  const submissionInputRef = useRef<HTMLInputElement>(null);
+  const stagedRef = useRef<StagedFile[]>([]);
 
-  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Keep ref in sync for unmount cleanup
+  useEffect(() => {
+    stagedRef.current = staged;
+  }, [staged]);
 
-    setError(null);
+  // Revoke all object URLs on unmount
+  useEffect(() => {
+    return () => {
+      stagedRef.current.forEach(({ previewUrl }) => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+      });
+    };
+  }, []);
 
-    if (file.size > FILE_SIZE_LIMIT) {
-      setError('File must be 10 MB or smaller');
-      return;
-    }
-    const allowed: readonly string[] = ALLOWED_MIME_TYPES;
-    if (!allowed.includes(file.type)) {
-      setError('File type not allowed. Accepted: PDF, DOC, DOCX, PNG, JPEG');
-      return;
-    }
+  // Sync staged files to the form submission input via DataTransfer (browser only)
+  useEffect(() => {
+    if (!submissionInputRef.current || typeof DataTransfer === 'undefined') return;
+    const dt = new DataTransfer();
+    staged.forEach(({ file, error }) => {
+      if (!error) dt.items.add(file);
+    });
+    submissionInputRef.current.files = dt.files;
+  }, [staged]);
 
-    setUploading(true);
-    const body = new FormData();
-    body.append('file', file);
-    body.append('ideaId', ideaId);
+  function handlePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const incoming = Array.from(e.target.files ?? []);
+    // Reset picker so same file can be picked again after removal
+    e.target.value = '';
+    if (incoming.length === 0) return;
 
-    const res = await fetch('/api/attachments', { method: 'POST', body });
-    setUploading(false);
+    const newEntries: StagedFile[] = incoming.map((file) => {
+      // Duplicate name check (against already-staged valid files)
+      const isDuplicate = staged.some((s) => s.file.name === file.name && !s.error);
+      if (isDuplicate) {
+        return { file, previewUrl: '', kind: getPreviewKind(file.type), error: `"${file.name}" is already added` };
+      }
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error ?? 'Upload failed');
-      return;
-    }
+      const allowed: readonly string[] = ALLOWED_MIME_TYPES;
+      if (!allowed.includes(file.type)) {
+        return { file, previewUrl: '', kind: 'document', error: `File type not allowed: ${file.name}` };
+      }
 
-    setFileName(file.name);
-    onUploadComplete?.();
-    router.refresh();
+      if (file.size > FILE_SIZE_LIMIT) {
+        return {
+          file,
+          previewUrl: URL.createObjectURL(file),
+          kind: getPreviewKind(file.type),
+          error: `File too large (max 10 MB): ${file.name}`,
+        };
+      }
+
+      return {
+        file,
+        previewUrl: URL.createObjectURL(file),
+        kind: getPreviewKind(file.type),
+        error: null,
+      };
+    });
+
+    setStaged((prev) => [...prev, ...newEntries]);
   }
 
-  function handleRemove() {
-    setFileName(null);
-    setError(null);
-    if (inputRef.current) inputRef.current.value = '';
+  function removeFile(index: number) {
+    setStaged((prev) => {
+      const sf = prev[index];
+      if (sf?.previewUrl) URL.revokeObjectURL(sf.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
   }
+
+  const validCount = staged.filter((s) => !s.error).length;
+  const atLimit = validCount >= MAX_ATTACHMENTS_PER_IDEA;
 
   return (
-    <div className="space-y-2">
-      {fileName ? (
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-neutral-700">{fileName}</span>
-          <Button type="button" variant="ghost" size="sm" onClick={handleRemove}>
-            Remove
-          </Button>
-        </div>
+    <div className="space-y-3">
+      {/* Hidden form submission input — populated via DataTransfer */}
+      <input
+        ref={submissionInputRef}
+        type="file"
+        name="file"
+        multiple
+        aria-hidden="true"
+        tabIndex={-1}
+        readOnly
+        className="hidden"
+      />
+
+      {/* Staged file list */}
+      <ul aria-live="polite" aria-label="Staged attachments" className="space-y-2">
+        {staged.map((sf, i) => (
+          <li key={`${sf.file.name}-${i}`} className="flex items-start gap-2">
+            {sf.kind === 'image' && sf.previewUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={sf.previewUrl}
+                alt={sf.file.name}
+                className="h-16 w-16 shrink-0 rounded object-cover"
+              />
+            ) : sf.kind === 'video' && sf.previewUrl ? (
+              <video
+                src={sf.previewUrl}
+                controls
+                preload="none"
+                aria-label={sf.file.name}
+                className="h-16 w-28 shrink-0 rounded"
+              />
+            ) : (
+              <span
+                role="img"
+                aria-label={`Document: ${sf.file.name}`}
+                className="flex h-16 w-16 shrink-0 items-center justify-center rounded bg-neutral-100 text-2xl"
+              >
+                📄
+              </span>
+            )}
+
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm">{sf.file.name}</p>
+              {sf.error && (
+                <p role="alert" className="text-sm text-red-600">
+                  {sf.error}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => removeFile(i)}
+              aria-label={`Remove ${sf.file.name}`}
+            >
+              Remove
+            </Button>
+          </li>
+        ))}
+      </ul>
+
+      {/* Add file control or limit message */}
+      {atLimit ? (
+        <p className="text-sm text-neutral-500">
+          Maximum {MAX_ATTACHMENTS_PER_IDEA} files reached
+        </p>
       ) : (
         <>
           <input
-            ref={inputRef}
+            ref={pickerRef}
             type="file"
             accept={[...ALLOWED_MIME_TYPES].join(',')}
-            onChange={handleChange}
-            disabled={uploading}
-            className="text-sm"
+            onChange={handlePick}
+            aria-label="Pick files to attach"
+            data-testid="file-picker"
+            className="hidden"
+            tabIndex={-1}
           />
-          {uploading && <p className="text-sm text-neutral-500">Uploading…</p>}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => pickerRef.current?.click()}
+          >
+            Add File
+          </Button>
         </>
       )}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {/* No-JS fallback */}
+      <noscript>
+        <input
+          type="file"
+          name="file"
+          multiple
+          accept={[...ALLOWED_MIME_TYPES].join(',')}
+        />
+      </noscript>
     </div>
   );
 }
+
