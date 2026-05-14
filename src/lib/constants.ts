@@ -37,3 +37,13 @@ export const LOCKOUT_DURATION_SECONDS = 900; // 15 minutes
 export const MAX_DRAFTS_PER_USER = 10;
 
 export const ANONYMOUS_SUBMITTER_LABEL = 'Anonymous Submitter';
+
+export const SCORING_DIMENSIONS = [
+  { key: 'innovation',          label: 'Innovation' },
+  { key: 'feasibility',         label: 'Feasibility' },
+  { key: 'business_impact',     label: 'Business Impact' },
+  { key: 'strategic_alignment', label: 'Strategic Alignment' },
+  { key: 'technical_soundness', label: 'Technical Soundness' },
+] as const;
+
+export type ScoringDimension = (typeof SCORING_DIMENSIONS)[number]['key'];

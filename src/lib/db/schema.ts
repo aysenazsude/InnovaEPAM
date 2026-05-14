@@ -242,3 +242,43 @@ export type StageTransition = typeof stageTransitions.$inferSelect;
 export type NewStageTransition = typeof stageTransitions.$inferInsert;
 export type ClarificationRequest = typeof clarificationRequests.$inferSelect;
 export type NewClarificationRequest = typeof clarificationRequests.$inferInsert;
+
+// ── Evaluation Scores (Phase 7 — scoring system) ──────────────────────────────
+
+export const SCORING_DIMENSION_VALUES = [
+  'innovation',
+  'feasibility',
+  'business_impact',
+  'strategic_alignment',
+  'technical_soundness',
+] as const;
+
+export type ScoringDimension = (typeof SCORING_DIMENSION_VALUES)[number];
+
+export const evaluationScores = sqliteTable(
+  'evaluation_scores',
+  {
+    id: text('id').primaryKey(),
+    ideaId: text('idea_id')
+      .notNull()
+      .references(() => ideas.id, { onDelete: 'cascade' }),
+    stageTransitionId: text('stage_transition_id')
+      .notNull()
+      .references(() => stageTransitions.id, { onDelete: 'cascade' }),
+    adminId: text('admin_id')
+      .notNull()
+      .references(() => users.id),
+    dimension: text('dimension', { enum: SCORING_DIMENSION_VALUES }).notNull(),
+    score: integer('score').notNull(),
+    createdAt: integer('created_at').notNull(),
+  },
+  (table) => [
+    uniqueIndex('idx_evaluation_scores_transition_dimension')
+      .on(table.stageTransitionId, table.dimension),
+    index('idx_evaluation_scores_idea_id').on(table.ideaId),
+    index('idx_evaluation_scores_transition_id').on(table.stageTransitionId),
+  ]
+);
+
+export type EvaluationScore = typeof evaluationScores.$inferSelect;
+export type NewEvaluationScore = typeof evaluationScores.$inferInsert;

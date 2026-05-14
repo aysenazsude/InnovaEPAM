@@ -3,12 +3,15 @@ import { auth } from '@/auth';
 import { getIdeaById } from '@/lib/actions/ideas';
 import { getPipelineHistory, startPipelineReview } from '@/lib/actions/pipeline';
 import { PipelineForm } from '@/components/admin/PipelineForm';
+import { ScoreSummaryCard } from '@/components/admin/ScoreSummaryCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { isPipelineStatus, isActivePipelineStage, PIPELINE_STAGES } from '@/lib/ideas/pipelineMachine';
 import type { PipelineStage } from '@/lib/ideas/pipelineMachine';
 import type { StageTransitionView } from '@/lib/pipeline/pipelineRepository';
+import { getScoreSummary } from '@/lib/pipeline/pipelineRepository';
+import { db } from '@/lib/db';
 import { ANONYMOUS_SUBMITTER_LABEL } from '@/lib/constants';
 import Link from 'next/link';
 
@@ -52,6 +55,8 @@ export default async function PipelineReviewPage({ params }: Params) {
 async function PipelineReviewContent({ idea }: { idea: NonNullable<Awaited<ReturnType<typeof getIdeaById>>> }) {
   const historyResult = await getPipelineHistory(idea.id);
   const history: StageTransitionView[] = Array.isArray(historyResult) ? historyResult : [];
+
+  const scoreSummary = await getScoreSummary(idea.id, db);
 
   const isActive = isActivePipelineStage(idea.status);
   const currentStage = isActive ? (idea.status as PipelineStage) : null;
@@ -121,6 +126,14 @@ async function PipelineReviewContent({ idea }: { idea: NonNullable<Awaited<Retur
         <div className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800">
           ✗ This idea was <strong>rejected</strong>.
         </div>
+      )}
+
+      {/* Score summary */}
+      {scoreSummary.byStage.length > 0 && (
+        <section aria-label="evaluation scores">
+          <h3 className="mb-2 text-sm font-semibold text-neutral-700">Evaluation Scores</h3>
+          <ScoreSummaryCard summary={scoreSummary} />
+        </section>
       )}
 
       {/* Active pipeline form */}

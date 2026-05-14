@@ -15,6 +15,7 @@ import {
 import type { PipelineStage } from '@/lib/ideas/pipelineMachine';
 import { getNextStage } from '@/lib/ideas/pipelineMachine';
 import type { StageTransitionView } from '@/lib/pipeline/pipelineRepository';
+import { ScoringPanel } from '@/components/admin/ScoringPanel';
 
 // ── Label helpers ─────────────────────────────────────────────────────────────
 
@@ -123,6 +124,8 @@ export function PipelineForm({
           />
         </div>
 
+        <ScoringPanel />
+
         <div className="flex gap-3 flex-wrap">
           {isFinal ? (
             <Button type="submit" disabled={isPending}>
@@ -158,6 +161,7 @@ export function PipelineForm({
             className="mt-1"
           />
         </div>
+        <ScoringPanel namePrefix="score" />
         <Button type="submit" variant="destructive" disabled={isRejectPending}>
           {isRejectPending ? 'Rejecting…' : 'Reject'}
         </Button>

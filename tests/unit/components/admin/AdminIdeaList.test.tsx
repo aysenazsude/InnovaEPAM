@@ -77,4 +77,16 @@ describe('AdminIdeaList', () => {
     const link = screen.getByRole('link');
     expect(link).toHaveAttribute('href', '/admin/ideas/phase1-001');
   });
+
+  it('should display the aggregate score badge when aggregateScore is present', () => {
+    const ideas = [makeAdminIdeaView({ id: 'scored-001', aggregateScore: 4.2 })];
+    render(<AdminIdeaList ideas={ideas} />);
+    expect(screen.getByText(/4\.2/)).toBeInTheDocument();
+  });
+
+  it('should not display a score badge when aggregateScore is absent', () => {
+    const ideas = [makeAdminIdeaView({ id: 'unscored-001' })];
+    render(<AdminIdeaList ideas={ideas} />);
+    expect(screen.queryByText(/★/)).not.toBeInTheDocument();
+  });
 });

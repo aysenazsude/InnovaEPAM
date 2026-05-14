@@ -19,9 +19,11 @@ import {
   getPendingClarification,
   getPipelineCounts as repoGetPipelineCounts,
   getStaleClarificationIdeaIds as repoGetStaleClarificationIdeaIds,
+  insertEvaluationScores,
   type StageTransitionView,
   type PipelineCounts,
 } from '@/lib/pipeline/pipelineRepository';
+import { extractScores } from '@/lib/pipeline/scoringHelpers';
 
 export interface PipelineActionResult {
   error?: string;
@@ -95,6 +97,9 @@ export async function advanceStage(
   const notesValidation = validateNotes(notes);
   if (!notesValidation.valid) return { error: notesValidation.error };
 
+  const scoreResult = extractScores(formData);
+  if ('error' in scoreResult) return { error: scoreResult.error };
+
   // Read current state before transaction (SQLite serialises writes)
   const [idea] = await dbInstance.select().from(ideas).where(eq(ideas.id, ideaId)).limit(1);
   if (!idea) return { error: 'Idea not found' };
@@ -106,6 +111,7 @@ export async function advanceStage(
   if (!nextStage) return { error: 'No further stages available; use approve or reject' };
 
   const now = Math.floor(Date.now() / 1000);
+  const transitionId = randomUUID();
 
   dbInstance.transaction((tx) => {
     tx.update(ideas)
@@ -114,7 +120,7 @@ export async function advanceStage(
       .run();
 
     tx.insert(stageTransitions).values({
-      id: randomUUID(),
+      id: transitionId,
       ideaId,
       stage: currentStage,
       action: 'advanced',
@@ -122,6 +128,11 @@ export async function advanceStage(
       adminId: adminUser.id,
       createdAt: now,
     }).run();
+
+    insertEvaluationScores(
+      { transitionId, ideaId, adminId: adminUser.id, scores: scoreResult.scores, createdAt: now },
+      tx as unknown as DB
+    );
   });
 
   revalidatePath(`/admin/ideas/${ideaId}`);
@@ -145,11 +156,15 @@ export async function approveAtFinalDecision(
   const notesValidation = validateNotes(notes);
   if (!notesValidation.valid) return { error: notesValidation.error };
 
+  const scoreResult = extractScores(formData);
+  if ('error' in scoreResult) return { error: scoreResult.error };
+
   const [idea] = await dbInstance.select().from(ideas).where(eq(ideas.id, ideaId)).limit(1);
   if (!idea) return { error: 'Idea not found' };
   if (idea.status !== expectedStatus || idea.status !== 'final_decision') return { conflict: true };
 
   const now = Math.floor(Date.now() / 1000);
+  const transitionId = randomUUID();
 
   dbInstance.transaction((tx) => {
     tx.update(ideas)
@@ -158,7 +173,7 @@ export async function approveAtFinalDecision(
       .run();
 
     tx.insert(stageTransitions).values({
-      id: randomUUID(),
+      id: transitionId,
       ideaId,
       stage: 'final_decision',
       action: 'approved',
@@ -166,6 +181,11 @@ export async function approveAtFinalDecision(
       adminId: adminUser.id,
       createdAt: now,
     }).run();
+
+    insertEvaluationScores(
+      { transitionId, ideaId, adminId: adminUser.id, scores: scoreResult.scores, createdAt: now },
+      tx as unknown as DB
+    );
   });
 
   revalidatePath(`/admin/ideas/${ideaId}`);
@@ -189,6 +209,9 @@ export async function rejectAtStage(
   const notesValidation = validateNotes(notes);
   if (!notesValidation.valid) return { error: notesValidation.error };
 
+  const scoreResult = extractScores(formData);
+  if ('error' in scoreResult) return { error: scoreResult.error };
+
   const [idea] = await dbInstance.select().from(ideas).where(eq(ideas.id, ideaId)).limit(1);
   if (!idea) return { error: 'Idea not found' };
   if (idea.status !== expectedStatus) return { conflict: true };
@@ -196,6 +219,7 @@ export async function rejectAtStage(
 
   const currentStage = idea.status as PipelineStage;
   const now = Math.floor(Date.now() / 1000);
+  const transitionId = randomUUID();
 
   dbInstance.transaction((tx) => {
     tx.update(ideas)
@@ -204,7 +228,7 @@ export async function rejectAtStage(
       .run();
 
     tx.insert(stageTransitions).values({
-      id: randomUUID(),
+      id: transitionId,
       ideaId,
       stage: currentStage,
       action: 'rejected',
@@ -212,6 +236,11 @@ export async function rejectAtStage(
       adminId: adminUser.id,
       createdAt: now,
     }).run();
+
+    insertEvaluationScores(
+      { transitionId, ideaId, adminId: adminUser.id, scores: scoreResult.scores, createdAt: now },
+      tx as unknown as DB
+    );
   });
 
   revalidatePath(`/admin/ideas/${ideaId}`);

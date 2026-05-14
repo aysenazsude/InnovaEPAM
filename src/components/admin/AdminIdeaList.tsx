@@ -169,13 +169,20 @@ export function AdminIdeaList({ ideas, pipelineCounts, staleClarificationIdeaIds
                           </span>
                         )}
                         </div>
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            statusClass[idea.status] ?? ''
-                          }`}
-                        >
-                          {idea.status.replace(/_/g, ' ')}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          {idea.aggregateScore !== undefined && (
+                            <span className="text-xs font-semibold text-yellow-700 bg-yellow-100 border border-yellow-300 rounded px-1.5 py-0.5">
+                              ★ {idea.aggregateScore}
+                            </span>
+                          )}
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              statusClass[idea.status] ?? ''
+                            }`}
+                          >
+                            {idea.status.replace(/_/g, ' ')}
+                          </span>
+                        </div>
                       </div>
                       <p className="text-xs text-neutral-500">
                         {idea.category.replace(/_/g, ' ')} &middot;{' '}
